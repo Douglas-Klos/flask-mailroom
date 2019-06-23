@@ -10,8 +10,8 @@ from model import Donation, Donor, User
 
 
 app = Flask(__name__)
-# app.secret_key = b"\x8d\xe5\xdf\x08L\xda<\x06S\xca\xab:\x8a\xee\xef\xfa\xfedV\xa84b\x06j\xd7N\xbf;\xe7\x174\x1a"
-app.secret_key = os.environ.get('SECRET_KEY').encode()
+app.secret_key = b"\x8d\xe5\xdf\x08L\xda<\x06S\xca\xab:\x8a\xee\xef\xfa\xfedV\xa84b\x06j\xd7N\xbf;\xe7\x174\x1a"
+# app.secret_key = os.environ.get('SECRET_KEY').encode()
 
 
 @app.route("/")
@@ -39,13 +39,18 @@ def add_donation():
 
     if request.method == "POST":
         try:
-            existing_donor = Donor.get(Donor.name == request.form["donor"].title())
-            Donation(donor=existing_donor, value=request.form["value"]).save()
-        except DoesNotExist:
-            new_donor = Donor(name=request.form["donor"].title())
-            new_donor.save()
-            Donation(donor=new_donor, value=request.form["value"]).save()
-        return redirect(url_for("all_donations"))
+            try:
+                existing_donor = Donor.get(Donor.name == request.form["donor"].title())
+                Donation(donor=existing_donor, value=request.form["value"]).save()
+            except DoesNotExist:
+                new_donor = Donor(name=request.form["donor"].title())
+                new_donor.save()
+                Donation(donor=new_donor, value=request.form["value"]).save()
+            return redirect(url_for("all_donations"))
+        except OverflowError:
+            return render_template(
+                "add.jinja2", error="Please enter a reasonable number..."
+            )
 
     return render_template("add.jinja2")
 
